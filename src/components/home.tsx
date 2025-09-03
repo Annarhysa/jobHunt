@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,9 @@ import { PlusCircle } from "lucide-react";
 import GameBoard from "./GameBoard";
 import GameControls from "./GameControls";
 import ResultsBoard from "./ResultsBoard";
+import DescriptionList from "./DescriptionList";
+import ReactDOM from "react-dom";
+import { AnimatePresence } from "framer-motion";
 
 interface JobData {
   id: number;
@@ -20,62 +23,43 @@ interface JobData {
 
 const Home = () => {
   // Mock data for job titles and descriptions
-  const [jobs, setJobs] = useState<JobData[]>([
-    {
-      id: 1,
-      title: "Software Engineer",
-      descriptions: [
-        {
-          id: "1-1",
-          text: "Writes code and fixes bugs",
-          contributor: "Alex",
-          votes: 5,
-        },
-        {
-          id: "1-2",
-          text: "Turns coffee into code",
-          contributor: "Jamie",
-          votes: 10,
-        },
-        {
-          id: "1-3",
-          text: "Builds digital solutions to real-world problems",
-          contributor: "Taylor",
-          votes: 7,
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Graphic Designer",
-      descriptions: [
-        {
-          id: "2-1",
-          text: "Creates visual concepts using computer software",
-          contributor: "Jordan",
-          votes: 8,
-        },
-        {
-          id: "2-2",
-          text: "Makes things look pretty",
-          contributor: "Casey",
-          votes: 4,
-        },
-        {
-          id: "2-3",
-          text: "Communicates ideas through images and layouts",
-          contributor: "Riley",
-          votes: 6,
-        },
-      ],
-    },
-    // Add more mock jobs as needed
-  ]);
+  const initialJobs = [
+    { id: 1, title: "Software Engineer", descriptions: [] },
+    { id: 2, title: "Graphic Designer", descriptions: [] },
+    { id: 3, title: "Teacher", descriptions: [] },
+    { id: 4, title: "Doctor", descriptions: [] },
+    { id: 5, title: "Chef", descriptions: [] },
+    { id: 6, title: "Pilot", descriptions: [] },
+    { id: 7, title: "Police Officer", descriptions: [] },
+    { id: 8, title: "Firefighter", descriptions: [] },
+    { id: 9, title: "Lawyer", descriptions: [] },
+    { id: 10, title: "Journalist", descriptions: [] },
+    { id: 11, title: "Photographer", descriptions: [] },
+    { id: 12, title: "Musician", descriptions: [] },
+    { id: 13, title: "Actor", descriptions: [] },
+    { id: 14, title: "Architect", descriptions: [] },
+    { id: 15, title: "Scientist", descriptions: [] },
+    { id: 16, title: "Dentist", descriptions: [] },
+    { id: 17, title: "Plumber", descriptions: [] },
+    { id: 18, title: "Electrician", descriptions: [] },
+    { id: 19, title: "Mechanic", descriptions: [] },
+    { id: 20, title: "Barista", descriptions: [] },
+  ];
+
+  const [jobs, setJobs] = useState<JobData[]>(() => {
+    const saved = localStorage.getItem('jobs');
+    return saved ? JSON.parse(saved) : initialJobs;
+  });
+  useEffect(() => {
+    localStorage.setItem('jobs', JSON.stringify(jobs));
+  }, [jobs]);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60);
+  const [showAddDescription, setShowAddDescription] = useState(false);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   // Handle navigation between questions
   const handleNextQuestion = () => {
@@ -184,76 +168,184 @@ const Home = () => {
         transition={{ duration: 0.5 }}
         className="max-w-7xl mx-auto"
       >
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#495057] mb-2">
-            Job Guessing Game
-          </h1>
-          <p className="text-[#6c757d]">Guess the job based on descriptions!</p>
-        </header>
-
-        {!isGameComplete ? (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3">
-              <GameBoard
-                job={jobs[currentQuestionIndex]}
-                onVote={handleVote}
-                onDelete={handleDeleteDescription}
-              />
-              <GameControls
-                currentQuestion={currentQuestionIndex + 1}
-                totalQuestions={jobs.length}
-                onPrevious={handlePreviousQuestion}
-                onNext={handleNextQuestion}
-                timeRemaining={timeRemaining}
-                isTimerRunning={timerRunning}
-                onStartTimer={startTimer}
-                onPauseTimer={pauseTimer}
-                onResetTimer={resetTimer}
-              />
-            </div>
-
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4 text-[#495057]">
-                  Add Description
-                </h2>
-                <AddDescriptionForm
-                  onSubmit={(text, contributor) =>
-                    handleAddDescription(
-                      jobs[currentQuestionIndex].id,
-                      text,
-                      contributor,
-                    )
-                  }
-                />
-              </div>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="w-full mt-4">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Contribute on Mobile
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <h2 className="text-xl font-semibold mb-4 text-[#495057]">
-                    Add Description
-                  </h2>
-                  <AddDescriptionForm
-                    onSubmit={(text, contributor) =>
-                      handleAddDescription(
-                        jobs[currentQuestionIndex].id,
-                        text,
-                        contributor,
-                      )
-                    }
-                  />
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
+        {isGameComplete ? (
+          <ResultsBoard
+            results={jobs.map(job => ({
+              ...job,
+              id: String(job.id),
+              descriptions: job.descriptions.map((desc, i) => ({ ...desc, rank: i + 1 }))
+            }))}
+            onPlayAgain={handleRestartGame}
+          />
         ) : (
-          <ResultsBoard jobs={jobs} onPlayAgain={handleRestartGame} />
+          <>
+            <header className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-[#495057] mb-2">
+                WhatsMyJob (The bad eddition)
+              </h1>
+              <p className="text-[#6c757d]">Describe your job as badly as you can to win the game!</p>
+            </header>
+            <GameControls
+              currentQuestion={currentQuestionIndex + 1}
+              totalQuestions={jobs.length}
+              onPrevious={handlePreviousQuestion}
+              onNext={handleNextQuestion}
+            />
+            <div className="flex items-center justify-between mb-10 mt-6">
+              <h2 className="text-4xl font-extrabold text-black">
+                {jobs[currentQuestionIndex]?.title}
+              </h2>
+              <div className="flex gap-2">
+                {currentQuestionIndex === jobs.length - 1 && (
+                  <Button
+                    variant="secondary"
+                    className="flex items-center gap-2"
+                    onClick={() => setIsGameComplete(true)}
+                  >
+                    Show Leaderboard
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  className="flex items-center gap-2"
+                  onClick={() => setShowConfirmReset(true)}
+                >
+                  All Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => setShowAddDescription(true)}
+                >
+                  <PlusCircle className="h-5 w-5" />
+                  Add Description
+                </Button>
+              </div>
+            </div>
+            {ReactDOM.createPortal(
+              <AnimatePresence>
+                {showAddDescription && (
+                  <>
+                    <motion.div
+                      className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => setShowAddDescription(false)}
+                    />
+                    <motion.div
+                      className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 p-8 flex flex-col"
+                      initial={{ x: '100%' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: '100%' }}
+                      transition={{ type: 'tween', duration: 0.3 }}
+                    >
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-[#495057]">Add Description</h2>
+                        <Button variant="ghost" onClick={() => setShowAddDescription(false)}>
+                          ✕
+                        </Button>
+                      </div>
+                      <AddDescriptionForm
+                        onSubmit={(text, contributor) => {
+                          handleAddDescription(
+                            jobs[currentQuestionIndex].id,
+                            text,
+                            contributor,
+                          );
+                          setShowAddDescription(false);
+                        }}
+                      />
+                    </motion.div>
+                  </>
+                )}
+                {showConfirmReset && (
+                  <>
+                    <motion.div
+                      className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-50"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => setShowConfirmReset(false)}
+                    />
+                    <motion.div
+                      className="fixed left-1/2 top-1/2 z-50 bg-white rounded-lg shadow-2xl p-8 flex flex-col items-center"
+                      style={{ transform: 'translate(-50%, -50%)' }}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ type: 'spring', duration: 0.25 }}
+                    >
+                      <h2 className="text-xl font-bold mb-4">Confirm Reset</h2>
+                      <p className="mb-6 text-center">Are you sure you want to delete all jobs and descriptions? This cannot be undone.</p>
+                      <div className="flex gap-4">
+                        <Button variant="destructive" onClick={() => {
+                          setJobs([]);
+                          localStorage.removeItem('jobs');
+                          setShowConfirmReset(false);
+                        }}>
+                          Yes, Delete All
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowConfirmReset(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>,
+              document.body
+            )}
+            <div>
+              <DescriptionList
+                descriptions={(jobs[currentQuestionIndex]?.descriptions || []).map((desc, i) => ({ ...desc, rank: i + 1 }))}
+                onUpvote={id => {
+                  setJobs(jobs => jobs.map(job => {
+                    if (job.id !== jobs[currentQuestionIndex].id) return job;
+                    const idx = job.descriptions.findIndex(desc => desc.id === id);
+                    if (idx > 0) {
+                      const newDescs = [...job.descriptions];
+                      [newDescs[idx - 1], newDescs[idx]] = [newDescs[idx], newDescs[idx - 1]];
+                      return { ...job, descriptions: newDescs };
+                    }
+                    return job;
+                  }));
+                }}
+                onDownvote={id => {
+                  setJobs(jobs => jobs.map(job => {
+                    if (job.id !== jobs[currentQuestionIndex].id) return job;
+                    const idx = job.descriptions.findIndex(desc => desc.id === id);
+                    if (idx < job.descriptions.length - 1 && idx !== -1) {
+                      const newDescs = [...job.descriptions];
+                      [newDescs[idx + 1], newDescs[idx]] = [newDescs[idx], newDescs[idx + 1]];
+                      return { ...job, descriptions: newDescs };
+                    }
+                    return job;
+                  }));
+                }}
+                onDelete={id => {
+                  setJobs(jobs => jobs.map(job =>
+                    job.id === jobs[currentQuestionIndex].id ? {
+                      ...job,
+                      descriptions: job.descriptions.filter(desc => desc.id !== id)
+                    } : job
+                  ));
+                }}
+                onEdit={(id, newText, newContributor) => {
+                  setJobs(jobs => jobs.map(job =>
+                    job.id === jobs[currentQuestionIndex].id ? {
+                      ...job,
+                      descriptions: job.descriptions.map(desc =>
+                        desc.id === id ? { ...desc, text: newText, contributor: newContributor } : desc
+                      )
+                    } : job
+                  ));
+                }}
+              />
+            </div>
+          </>
         )}
       </motion.div>
     </div>
