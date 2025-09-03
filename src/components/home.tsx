@@ -60,11 +60,37 @@ const Home = () => {
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [showAddDescription, setShowAddDescription] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  // Add state for timer duration and editing
+  const [timerDuration, setTimerDuration] = useState(60);
+  const [editingTimer, setEditingTimer] = useState(false);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!timerRunning) return;
+    if (timeRemaining <= 0) {
+      setTimerRunning(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          setTimerRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRunning, timeRemaining]);
 
   // Handle navigation between questions
   const handleNextQuestion = () => {
     if (currentQuestionIndex < jobs.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      if (timerRunning) {
+        setTimeRemaining(timerDuration);
+        setTimerRunning(true);
+      }
     } else {
       setIsGameComplete(true);
     }
@@ -73,13 +99,24 @@ const Home = () => {
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
+      if (timerRunning) {
+        setTimeRemaining(timerDuration);
+        setTimerRunning(true);
+      }
     }
   };
 
   // Timer controls
   const startTimer = () => setTimerRunning(true);
   const pauseTimer = () => setTimerRunning(false);
-  const resetTimer = () => setTimeRemaining(60);
+  // Update timer reset to use timerDuration
+  const resetTimer = () => setTimeRemaining(timerDuration);
+
+  // Update timer duration globally
+  const handleTimerDurationChange = (newDuration: number) => {
+    setTimerDuration(newDuration);
+    setTimeRemaining(newDuration);
+  };
 
   // Handle description ranking
   const handleVote = (
@@ -181,7 +218,7 @@ const Home = () => {
           <>
             <header className="text-center mb-8">
               <h1 className="text-4xl font-bold text-[#495057] mb-2">
-                WhatsMyJob (The bad eddition)
+                WhatsMyJob (The bad edition)
               </h1>
               <p className="text-[#6c757d]">Describe your job as badly as you can to win the game!</p>
             </header>
@@ -282,8 +319,7 @@ const Home = () => {
                       <p className="mb-6 text-center">Are you sure you want to delete all jobs and descriptions? This cannot be undone.</p>
                       <div className="flex gap-4">
                         <Button variant="destructive" onClick={() => {
-                          setJobs([]);
-                          localStorage.removeItem('jobs');
+                          setJobs(jobs => jobs.map((job, idx) => idx === currentQuestionIndex ? { ...job, descriptions: [] } : job));
                           setShowConfirmReset(false);
                         }}>
                           Yes, Delete All
